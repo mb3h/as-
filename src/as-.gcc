@@ -1,0 +1,76 @@
+#!/bin/sh
+
+CC=gcc
+
+CFLAGS="$CFLAGS -fdiagnostics-color=always"
+CFLAGS="$CFLAGS -Wno-attributes"
+CFLAGS="$CFLAGS -I."
+CFLAGS="$CFLAGS -fPIC"
+
+LIBS=
+
+OBJS=`cat <<_EOL
+as-.o
+macro.o
+param.o
+tokenlist.o
+x86_64.intel.o
+calc.o
+fragments.o
+procs.o
+reftbl.o
+sym.o
+assert.o
+m2s.o
+memspn.o
+memtoul.o
+mtoi.o
+pow2_ge.o
+t2s.o
+skip.o
+tokenize.o
+define.o
+directive.o
+undef.o
+_EOL`
+
+SRCS=`cat <<_EOL
+as-.c
+macro.c
+param.c
+tokenlist.c
+asm/x86_64.intel.c
+asm/calc.c
+asm/fragments.c
+asm/procs.c
+asm/reftbl.c
+asm/sym.c
+helper/assert.c
+helper/m2s.c
+helper/memspn.c
+helper/memtoul.c
+helper/mtoi.c
+helper/pow2_ge.c
+helper/t2s.c
+post/skip.c
+post/tokenize.c
+pre/define.c
+pre/directive.c
+pre/undef.c
+_EOL`
+
+# log level
+CFLAGS="$CFLAGS -DDEFAULT_LOG_MASK=8"
+   # 1: macro expanding
+   # 2: #define
+   # 4: C/C++'s tokenize [tokenlist.o]
+   # 8: assembler
+CFLAGS="$CFLAGS -DDEFAULT_LOG_LEVEL=0"
+
+CFLAGS="$CFLAGS -std=c99"
+LANG=C $CC $CFLAGS -c $SRCS
+TARGET=libas-.so
+ld -shared -o $TARGET $OBJS $LIBS
+
+# the following way is avoided, because many unknown exports is happened.
+# $CC -shared $CFLAGS -o $TARGET $SRCS
