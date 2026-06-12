@@ -26,6 +26,10 @@ f0528a48ad019519a38268f9df3295ac  orig.o
 f0528a48ad019519a38268f9df3295ac  test.o
 ```
 
+## data flow
+
+![](https://raw.githubusercontent.com/mb3h/as-/master/overview.png)
+
 ## TODO priority / progress
 
 BEGINNING

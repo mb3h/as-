@@ -1,0 +1,253 @@
+digraph graph_name {
+
+graph [
+//	charset = "UTF-8",
+	  label = "as-"
+	, labelloc = "t"
+	, labeljust = "c"
+	, bgcolor = "#343434"
+	, fontcolor = white
+	, fontsize = 18
+	, style = "filled"
+	, rankdir = LR
+	, margin = 0.2
+	, splines = spline
+	, ranksep = 1.0
+	, layout = dot
+	, nodesep = 0.9
+];
+
+node [
+	  colorscheme = "rdylgn11"
+	, style = "solid,filled"
+	, fontsize = 16
+	, fontcolor = 6
+	, fontname = "Migu 1M"
+	, color = 7
+	, fillcolor = "#808000"
+	, fixedsize = true
+	, height = 0.6
+	, width = 1.2
+];
+
+
+edge [
+	  style = solid
+	, fontsize = 12
+	, fontcolor = white
+	, fontname = "Migu 1M"
+	, color = white
+	, labelfloat = true
+	, labeldistance = 2.5
+	, labelangle = 70
+];
+
+
+// ------------------------------------------------------------
+// node
+
+pass1 [
+	  fillcolor = "#600060"
+	, style = solid
+];
+pass1_segid [ label = ".seg_id"
+	, style = solid
+];
+fragments [ label = "fragments[ ]\l"
+                  + "- obj[ len ]\l"
+                  + "- (seg_id)\l"
+                  + "  CSEG|DSEG\l"
+                  + "- len(jmp8)\l"
+                  + "- len(jmp32)\l"
+                  + "- opcode(jmp8)\l"
+                  + "- opcode(jmp32)\l"
+                  + "- lineno(jmp)\l"
+                  + "- expr(to)\l"
+                  + "     ↓\l"
+                  + "- (ofs_type)\l"
+                  + "  REL8|REL32\l"
+                  + "     ↓\l"
+                  + "- seg_addr\l"
+	, shape = box, width = 1.8, height = 3.8
+];
+reftbl [ label = "reftbl[ ]\l"
+               + "- frag_id(dst)\l"
+               + "- frag_ofs(dst)\l"
+               + "- (ofs_type)\l"
+               + "  REL8|REL32\l"
+               + "- expr(src)\l"
+               + "     ↓\l"
+               + "- seg_id(src)\l"
+               + "- seg_addr(src)\l"
+               + "- seg_id(dst)\l"
+               + "- seg_addr(dst)\l"
+	, shape = box, width = 1.6, height = 2.8
+];
+sym [ label = "sym[ ]\l"
+            + "- (type)\l"
+            + "  NUM\l"
+            + " |FRAG|SEG\l"
+            + "+ (union)\l"
+            + "  - number\l"
+            + "       or\l"
+            + "  - frag_id\l"
+            + "  - frag_ofs\l"
+            + "       ↓\l"
+            + "  - seg_id\l"
+            + "  - seg_addr\l"
+	, shape = box, width = 1.4, height = 3.0
+];
+//tmpsrc;
+
+pass2 [ label = "pass2 [ ]\l"
+              + "- frag_id(from)\l"
+              + "- len(obj)\l"
+              + "- len(jmp8)\l"
+              + "- len(jmp32)\l"
+              + "- expr(to)\l"
+              + "     ↓\l"
+              + "- frag_id(to)\l"
+              + "- frag_ofs(to)\l"
+//              + "     ↓\l"
+//              + "- (ofs_type)\l"
+//              + "  REL8|REL32\l"
+//              + "     ↓\l"
+//              + "- seg_addr\l"
+	, style = solid
+	, shape = box, width = 1.6, height = 2.3
+];
+elf_obj [ label = "CSEG"
+                + "\nDSEG"
+	, fillcolor = 11
+];
+elf_rel [ label = "RELOC"
+                + "\nRECORDS"
+	, fillcolor = "#800080"
+];
+
+
+// ------------------------------------------------------------
+// edge
+
+pass1 -> pass1_segid [
+	label = "(text|struct|section)"
+	      + "\n(pass1)"
+];
+pass1_segid -> pass1_to_fragments [ label = "(pass1)"
+	, style = dotted
+];
+fragments -> pass1_to_reftbl [ label = "frag_id ( dst )"
+	, style = dotted
+];
+
+//pass1_jmp [style = invis];
+pass1 -> pass1_to_fragments [ label = "obj+src(jmp)"
+	                                 + "\n(pass1)"
+	                                 + "\n(_ensure_appending)"
+	                                 + "\n(_push_code)"
+	                                 + "\n(_end_appending_with_rel8_capable_jmp)"
+	, dir = none
+	, style = bold, color = green2
+];
+pass1_to_fragments [
+	label = "", height = 0.1, width = 0.1, style = filled, fillcolor = white
+];
+pass1_to_fragments -> fragments [ label = ""
+	, style = bold, color = green2
+];
+
+//pass1_lab [style = invis];
+pass1 -> sym [ label = "label"
+	                  + "\n(pass1)"
+	                  + "\n(_register)"
+];
+
+//pass1_ref [style = invis];
+pass1 -> pass1_to_reftbl [ label = "rel32 (lea|call|mov|.quad|...)"
+	                     + "\n(pass1)"
+	                     + "\n(_append)"
+	, dir = none
+	, style = bold, color = magenta2
+];
+pass1_to_reftbl [
+	label = "", height = 0.1, width = 0.1, style = filled, fillcolor = white
+];
+pass1_to_reftbl -> reftbl [ label = ""
+	, style = bold, color = magenta2
+];
+
+// pass 2.1
+fragments -> pass2 [ label = "\n(pass2.1)"
+	                        + "\n(_jmp8or32_from)"
+	                        + "\n(_jmp8or32_optimize)"
+	, dir = both
+	, style = bold, color = magenta2
+];
+ofs_type [style = invis];
+ofs_type -> pass2 [ label = "REL8|REL32"
+	                       + "\n(pass2.1)"
+	                       + "\n(_jmp8or32_optimize)"
+	, style = dotted
+];
+to_reftbl [style = invis];
+to_reftbl -> pass2 [ label = "seg_addr"
+	                        + "\n(pass2.1)"
+	                        + "\n(_jmp8or32_to_reftbl)"
+	, style = dotted
+];
+pass2 -> reftbl [ taillabel = "(pass2.1)"
+	                         + "\n(_jmp8or32_to_reftbl → _append)"
+	, labeldistance = 7.2, labelangle = 1.2
+	, style = bold, color = magenta2
+];
+// pass 2.2
+pass2 -> fragments_to_elf_obj [ label = "REL8|REL32"
+	                                   + "\n(pass2.2)"
+	                                   + "\n(_write_rel8_capable_jmp)"
+	, labeldistance = 7.2, labelangle = 14.4
+	, style = "dotted,bold", color = green2
+];
+fragments -> fragments_to_elf_obj [ headlabel = "obj+jmp"
+	                                           + "\n(pass2.2)"
+	                                           + "\n(_seg_commit)"
+	, labeldistance = 7.2, labelangle = 14.4
+	, dir = none
+	, style = bold, color = green2
+];
+fragments_to_elf_obj [
+	label = "", height = 0.1, width = 0.1, style = filled, fillcolor = white
+];
+fragments_to_elf_obj -> elf_obj [ //label = "my()"
+                                  //      + "\n->elfobj",
+	style = bold, color = green2
+];
+// pass 2.3
+pass2 -> sym [ headlabel = ".seg_id+.seg_addr"
+	                      + "\n(pass2.3)"
+	, labeldistance = 7.2, labelangle = 1.2
+	, style = dotted
+//	, style = "dotted,bold", color = magenta2
+];
+// pass 2.4
+sym -> reftbl [ label = ".seg_id+.seg_addr"
+	                   + "\n(pass2.4)"
+	                   + "\n(_segment_addr_from_opr2n)"
+	, style = dotted
+];
+//fragments -> reftbl [ headlabel = "REL8|REL32"
+//                                + "\nseg_id ( dst )"
+//                                + "\nseg_addr ( dst )"
+//	, labeldistance = 7.2, labelangle = 1.2
+//	, style = dotted
+//];
+reftbl -> fragments_to_elf_obj [ headlabel = ".opr+.ref"
+	                                    + "\n(pass2.4)"
+	                                    + "\n(_resolve_reftbl)"
+	, labeldistance = 7.2, labelangle = 1.2
+	, style = dotted
+];
+reftbl -> elf_rel [ label = ".opr+.ref"
+	                       + "\n(pass2.4)"
+	, style = bold, color = magenta2
+];
+}
